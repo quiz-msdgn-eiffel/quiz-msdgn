@@ -1,5 +1,20 @@
 # Historique des versions — Mémo MSDGN
 
+## v2.1.1 (novembre 2026) — banque étendue : Chapitre 6 (494 questions, `494q-v2`)
+
+Même application, même barème (`B1`), même format de résultats (schéma 2) ; `version_app` reste `2.1`. Seules la banque embarquée et le numéro de banque changent.
+
+### Ce qui change par rapport à la v2.1
+- **85 questions ajoutées** : « Chapitre 6 - Pourquoi contrôler les coûts ? », identifiants `C6-001` à `C6-085` (49 QCM, 8 QCM_MULTI, 13 VF, 9 TROUS, 6 ASSO). Les 409 questions existantes (`C1-001` à `C5-086`) sont strictement inchangées.
+- **Banque** : `494q-v2` dans `index.html` (`BANK_VERSION`) et dans `config.json` (`version_banque`). Source : `banque_questions_modele_v3.csv`.
+- **Menu** : la séance « Chapitre 6 » apparaît automatiquement (6 séances).
+- **Service worker** `msdgn-v21b` (renouvelle le cache des téléphones).
+- Phase, barème, plafonds, équipes et codes : inchangés. Aucun point n'est attribué en phase `base`.
+
+### Points de vigilance
+- Les résultats portent désormais `version_banque = 494q-v2` pour les réponses données après la mise à jour : l'outil de fusion doit accepter cette valeur (à vérifier avant la collecte).
+- Ne pas déployer en cours de semaine de collecte sans prévenir.
+
 ## v2.1 (novembre 2026) — base reconfigurée : code personnel unique
 
 Même application, même banque (409 questions, `409q-v1`), même barème (`B1`), **même format de résultats** (schéma 2, 23 colonnes + somme de contrôle). Seule l'identification change ; `version_app` vaut `2.1` dans les lignes de résultats.
