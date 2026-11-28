@@ -130,5 +130,5 @@
     }
   ],
   "challenge_fin": "2027-12-31",
-  "evaluations": []
+  "evaluations": [{"id":"E61","fichier":"eval_E61.enc.json"}]
 }
