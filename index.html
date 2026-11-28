@@ -209,6 +209,30 @@
   #fx-glow.warm{background:linear-gradient(to top, rgba(255,70,0,.8), rgba(255,140,0,.3) 45%, transparent);}
   #fx-glow.hot{background:linear-gradient(to top, rgba(255,20,100,.85), rgba(255,90,0,.35) 45%, transparent);}
   @media (prefers-reduced-motion: reduce){ #fx-glow{display:none;} }
+
+  /* --- évaluation de fin de séance (v2.2) --- */
+  .eval-box{margin-top:18px;padding:14px;border:2px solid #2E75B6;border-radius:12px;background:#f3f8fd}
+  .eval-box h3{margin:0 0 6px;font-size:1.05rem;color:#1F4E79}
+  .eval-box .small{font-size:.85rem;color:var(--muted);margin-top:6px}
+  .ev-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  #ev-prog{font-weight:bold;color:#1F4E79}
+  .ev-timer{font-size:1.5rem;font-weight:bold;font-variant-numeric:tabular-nums;color:#1F4E79;background:#eef4fb;border-radius:10px;padding:4px 12px}
+  .ev-timer.warn{color:#9a6b00;background:#fff4d6}
+  .ev-dots{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+  .ev-dot{width:34px;height:34px;border-radius:50%;border:2px solid #b8c4d0;background:#fff;font-weight:bold;color:#445;cursor:pointer;padding:0}
+  .ev-dot.ans{background:#2E75B6;border-color:#2E75B6;color:#fff}
+  .ev-dot.cur{outline:3px solid #7FB069}
+  .ev-q{font-size:1.08rem;line-height:1.45;margin:10px 0 12px}
+  .ev-k{font-size:.78rem;color:var(--muted);letter-spacing:.04em}
+  .ev-opt{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border:1px solid var(--border);border-radius:10px;margin:7px 0;background:#fff;cursor:pointer}
+  .ev-opt.sel{border-color:#2E75B6;background:#eaf3fc}
+  .ev-opt input{margin-top:3px;transform:scale(1.25)}
+  .ev-asso{margin:8px 0}.ev-asso label{display:block;font-weight:bold;margin:10px 0 4px}
+  .ev-asso select{width:100%;padding:10px;font-size:1rem;border-radius:8px;border:1px solid var(--border)}
+  .ev-defs{font-size:.95rem;margin:8px 0;padding-left:20px}
+  .ev-defs li{margin:4px 0}
+  #ev-input{width:100%;padding:12px;font-size:1.1rem;border-radius:10px;border:1px solid var(--border)}
+  .ev-nav button{flex:1}
 </style>
 </head>
 <body>
@@ -256,6 +280,17 @@
     <div class="actions">
       <button class="btn-primary" id="btn-start">Commencer la session ▶</button>
       <button class="btn-secondary hidden" id="btn-toggle-help">ℹ️ Aide / format des questions</button>
+    </div>
+
+    <div class="eval-box hidden" id="eval-box">
+      <h3>📝 Évaluation de fin de séance</h3>
+      <div id="ev-resume" class="hidden"><p><b>Une évaluation est en cours.</b></p><button class="btn-primary" id="btn-ev-resume" type="button">Reprendre l'évaluation ▶</button></div>
+      <div id="ev-new">
+        <label for="input-eval-code">Code d'évaluation <span class="opt">(donné par ton enseignant en classe)</span></label>
+        <input type="text" id="input-eval-code" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Saisis le code">
+        <div class="actions"><button class="btn-primary" id="btn-ev-start" type="button">Commencer l'évaluation ▶</button></div>
+      </div>
+      <div class="small" id="ev-msg"></div>
     </div>
 
     <div class="ludic-buttons">
@@ -370,6 +405,23 @@
 
 
   <!-- ÉCRAN IDENTITÉ (premier lancement) -->
+  <!-- ÉVALUATION -->
+  <section id="screen-eval" class="card hidden">
+    <div class="ev-top"><div id="ev-prog">Question 1 / 10</div><div class="ev-timer" id="ev-timer">15:00</div></div>
+    <div class="ev-dots" id="ev-dots"></div>
+    <div id="ev-body"></div>
+    <div class="actions ev-nav"><button class="btn-secondary" id="ev-prev" type="button">◀ Précédente</button><button class="btn-primary" id="ev-next" type="button">Suivante ▶</button></div>
+    <div class="actions"><button class="btn-secondary" id="ev-finish" type="button">✔ Terminer l'évaluation</button></div>
+  </section>
+
+  <section id="screen-eval-end" class="card hidden">
+    <h2>✅ Évaluation terminée</h2>
+    <p>Tes réponses sont enregistrées sur ton téléphone. Envoie maintenant ton fichier de résultats, comme d'habitude. Ta note et ton bilan te seront donnés par ton enseignant.</p>
+    <div class="actions"><button class="btn-primary" id="ev-send" type="button">📤 Envoyer mes résultats</button></div>
+    <p class="small" id="ev-send-note"></p>
+    <div class="actions"><button class="btn-ghost" id="ev-home" type="button">Retour à l'accueil</button></div>
+  </section>
+
   <section id="screen-identity" class="card hidden">
     <h2>Bienvenue</h2>
     <p class="muted">Ton enseignant t'a remis une fiche avec ton code (deux mots et deux chiffres, par exemple « pomme-lac-17 »). Tu n'as à le saisir qu'une seule fois. Majuscules, tirets et accents n'ont pas d'importance. Ce code ne contient pas ton nom.</p>
@@ -1785,15 +1837,15 @@ function sha256(str){
 
 const L = (function(){
   const $ = (id) => document.getElementById(id);
-  const APP_VERSION = '2.1', BANK_VERSION = '494q-v2';
+  const APP_VERSION = '2.2', BANK_VERSION = '494q-v2';
   const ADMIN_PHASE_DEFAULT = 'base';
   const COLS = ['schema','eleve','equipe','session_id','session_debut','session_fin','horodatage','jour','question_id','format','correct','tentative','duree_s','mode','phase','version_app','version_banque','bareme_version','config_date','config_perimee','contexte_seance','participation_ludique','points_jeu'];
   const IDX = {}; COLS.forEach((c,i)=>IDX[c]=i);
-  const SCREENS = ['screen-start','screen-quiz','screen-end','screen-identity','screen-rank','screen-rules','screen-info','screen-test'];
+  const SCREENS = ['screen-start','screen-quiz','screen-end','screen-identity','screen-rank','screen-rules','screen-info','screen-test','screen-eval','screen-eval-end'];
   const DEFAULT_CFG = {
     schema:2, phase:'base', version_application:APP_VERSION, version_banque:BANK_VERSION, bareme_version:'B1', mis_a_jour_le:'', valide_jusqu_au:'',
     bareme:{points_par_format:{QCM:10,VF:10,TROUS:12,QCM_MULTI:15,ASSO:15}, plafond_quotidien_bonnes_reponses:15, plafond_hebdo_points:450, bonus_serie:{'3':5,'5':10,'10':20}, seuil_actif:{bonnes_reponses:20,jours_distincts:2}, defi_du_jour:10},
-    equipes:[], codes_eleves:{}, kdf:{iterations:100000, sel:'msdgn2|'}, contact_resultats:'', conservation_jusqu_au:'', codes_seance:[], challenge_fin:'', effets_force:''
+    equipes:[], codes_eleves:{}, kdf:{iterations:100000, sel:'msdgn2|'}, contact_resultats:'', conservation_jusqu_au:'', codes_seance:[], challenge_fin:'', effets_force:'', evaluations:[]
   };
   const LEVELS = [0,50,150,300,500,800,1200,1700,2300,3000];
   const BADGES = {
@@ -1937,7 +1989,7 @@ const L = (function(){
   }
   function rebuild(){
     ST = newState();
-    (sget('rows', [])).forEach(a => apply(rowObj(a), false));
+    (sget('rows', [])).forEach(a => { const o = rowObj(a); if(/eval$/.test(String(o.mode))) return; apply(o, false); });
   }
 
   /* ---------- notifications / effets ---------- */
@@ -2115,9 +2167,15 @@ const L = (function(){
     rows.forEach(r => { if(r[IDX.session_id] === session.sid && !r[IDX.session_fin]) r[IDX.session_fin] = fin; });
     sset('rows', rows);
   }
+  const EVX = ['competence','reponse','eval_id','fin_eval'];
   function csvText(){
-    const rows = sget('rows', []).map(r => { const c = r.slice(); c[IDX.session_fin] = c[IDX.session_fin] || ''; return c.concat([sha256(c.join('|')).slice(0,8)]); });
-    return '﻿' + rowsToCSV(COLS.concat(['controle']), rows);
+    const rows = sget('rows', []).map(r => {
+      const c = r.slice(0, COLS.length); while(c.length < COLS.length) c.push('');
+      c[IDX.session_fin] = c[IDX.session_fin] || '';
+      const ex = r.slice(COLS.length, COLS.length + EVX.length); while(ex.length < EVX.length) ex.push('');
+      return c.concat([sha256(c.join('|')).slice(0,8)], ex, [ex[2] ? sha256(c.concat(ex).join('|')).slice(0,8) : '']);
+    });
+    return '\ufeff' + rowsToCSV(COLS.concat(['controle'], EVX, ['controle_eval']), rows);
   }
   function fileName(){
     const id = identity();
@@ -2151,13 +2209,13 @@ const L = (function(){
   async function goStart(){
     show('screen-start'); applyChrome();
     $('btn-start').disabled = true;
-    await loadConfig(); $('btn-start').disabled = false; renderStart();
+    await loadConfig(); $('btn-start').disabled = false; if(evCheckPending()) return; renderStart(); renderEvalBox(); evPrefetch();
   }
   function renderStart(){
     applyChrome();
     const id = identity();
     if(!id.eleve && !ADMIN){ show('screen-identity'); return; }
-    $('who-code').textContent = id.eleve || '—';
+    $('who-code').textContent = id.eleve || '—'; try{ renderEvalBox(); }catch(e){}
     const tid = teamId(id.grp), t = teamObj(tid);
     $('who-team').textContent = (t && isLud()) ? ' · équipe ' + t.nom : '';
     const tc = $('team-card');
@@ -2323,8 +2381,193 @@ const L = (function(){
     rebuild(); openIdentity();
   }
 
+
+  /* ---------- évaluation de fin de séance (v2.2) ---------- */
+  let EV = null, evTick = null;
+  const evKey = (id) => 'ev:' + id;
+  const evUnhex = (h) => Uint8Array.from(h.match(/../g), x => parseInt(x,16));
+  const evUnb64 = (b) => Uint8Array.from(atob(b), c => c.charCodeAt(0));
+  async function evDecrypt(file, code){
+    const enc = new TextEncoder();
+    const k0 = await crypto.subtle.importKey('raw', enc.encode(normPerso(code)), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({name:'PBKDF2', hash:'SHA-256', salt:evUnhex(file.salt), iterations:file.iter || 200000}, k0, {name:'AES-GCM', length:256}, false, ['decrypt']);
+    const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:evUnhex(file.iv)}, key, evUnb64(file.ct));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+  function evCached(id){ try{ return JSON.parse(localStorage.getItem('x:ev:' + id) || 'null'); }catch(e){ return null; } }
+  async function evPrefetch(){
+    for(const e of (CFG.evaluations || [])){ if(e && e.id && e.fichier){ try{ await fetchJSON(e.fichier, 'x:ev:' + e.id); }catch(x){} } }
+    renderEvalBox();
+  }
+  function evMsg(t){ $('ev-msg').textContent = t || ''; }
+  function evPending(){
+    const cur = sget('ev:cur', null); if(!cur) return null;
+    const st = sget(evKey(cur), null); return (st && !st.done) ? st : null;
+  }
+  function renderEvalBox(){
+    const box = $('eval-box'), has = (CFG.evaluations || []).length > 0, id = identity();
+    if(!has || !id.eleve){ box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    const pend = evPending();
+    $('ev-resume').classList.toggle('hidden', !pend);
+    $('ev-new').classList.toggle('hidden', !!pend);
+  }
+  function evRng(seedHex){
+    let a = parseInt(seedHex, 16) >>> 0;
+    return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+  function evShuffle(n, rnd){ const a = Array.from({length:n}, (_, i) => i); for(let i = n - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  async function evStart(){
+    const idt = identity();
+    if(!idt.eleve){ evMsg("Saisis d'abord ton code personnel."); return; }
+    const code = ($('input-eval-code').value || '').trim();
+    if(!code){ evMsg("Saisis le code d'évaluation donné par ton enseignant."); return; }
+    if(!(window.crypto && crypto.subtle)){ evMsg("Ce navigateur ne permet pas de passer l'évaluation."); return; }
+    evMsg('Vérification du code…');
+    let found = null, missing = 0;
+    for(const e of (CFG.evaluations || [])){
+      const f = evCached(e.id); if(!f){ missing++; continue; }
+      try{ found = {e:e, p:await evDecrypt(f, code)}; break; }catch(x){}
+    }
+    if(!found){ evMsg(missing ? "L'évaluation n'est pas encore enregistrée sur ce téléphone : connecte-toi à internet un instant, puis réessaie." : 'Code incorrect.'); return; }
+    const P = found.p, old = sget(evKey(P.id), null);
+    if(old && old.done){ evMsg('Tu as déjà passé cette évaluation sur ce téléphone.'); return; }
+    if(old && !old.done){ EV = old; evOpen(); return; }
+    const mins = Math.round((P.duree_s || 900) / 60);
+    if(!confirm('Tu as ' + mins + ' minutes. Le chronomètre démarre dès que tu confirmes. Commencer maintenant ?')) { evMsg(''); return; }
+    const rnd = evRng(sha256('ev|' + idt.eleve + '|' + P.id).slice(0, 8));
+    const qs = P.questions, perms = {};
+    qs.forEach(q => {
+      if(q.type === 'ASSO') perms[q.id] = {n:evShuffle(q.c.length, rnd), d:evShuffle(q.defs.length, rnd)};
+      else if(q.type === 'VF') perms[q.id] = [0, 1];
+      else if(q.type === 'QCM' || q.type === 'QCM_MULTI') perms[q.id] = evShuffle(q.c.length, rnd);
+    });
+    const a = new Uint8Array(6); crypto.getRandomValues(a);
+    const now = new Date();
+    EV = {id:P.id, eleve:idt.eleve, equipe:teamId(idt.grp), sid:'ev' + Array.from(a).map(b => ('0' + b.toString(16)).slice(-2)).join(''), debut:isoLocal(nowD()),
+          start:Date.now(), end:Date.now() + (P.duree_s || 900) * 1000, order:evShuffle(qs.length, rnd), perms:perms, ans:{}, cur:0, done:false, P:P, test:T.on, phase:effPhase(), stale:isStale()};
+    sset('ev:cur', P.id); sset(evKey(P.id), EV);
+    evMsg(''); $('input-eval-code').value = '';
+    evOpen();
+  }
+  function evSave(){ if(EV) sset(evKey(EV.id), EV); }
+  function evOpen(){
+    show('screen-eval'); applyChrome();
+    if(evTick) clearInterval(evTick);
+    evTick = setInterval(evClock, 500); evClock(); evRender();
+  }
+  function evClock(){
+    if(!EV) return;
+    const left = Math.max(0, Math.round((EV.end - Date.now()) / 1000));
+    const el = $('ev-timer'); el.textContent = pad(Math.floor(left / 60)) + ':' + pad(left % 60); el.classList.toggle('warn', left <= 120);
+    if(Date.now() >= EV.end) evFinish('temps');
+  }
+  const evLetter = (i) => String.fromCharCode(65 + i);
+  function evAnswered(q){
+    const v = EV.ans[q.id]; if(v === undefined || v === null) return false;
+    if(q.type === 'QCM_MULTI') return v.length > 0;
+    if(q.type === 'TROUS') return String(v).trim() !== '';
+    if(q.type === 'ASSO') return Object.keys(v).length > 0;
+    return v !== '';
+  }
+  function evRender(){
+    const qs = EV.P.questions, n = qs.length, idx = EV.cur, q = qs[EV.order[idx]];
+    $('ev-prog').textContent = 'Question ' + (idx + 1) + ' / ' + n;
+    $('ev-dots').innerHTML = EV.order.map((qi, i) => '<button type="button" class="ev-dot' + (evAnswered(qs[qi]) ? ' ans' : '') + (i === idx ? ' cur' : '') + '" data-i="' + i + '">' + (i + 1) + '</button>').join('');
+    $('ev-dots').querySelectorAll('.ev-dot').forEach(b => b.onclick = () => { EV.cur = +b.dataset.i; evSave(); evRender(); });
+    let h = '<div class="ev-k">' + escapeHTML(EV.P.titre || '') + '</div><div class="ev-q">' + escapeHTML(q.q) + '</div>';
+    const v = EV.ans[q.id];
+    if(q.type === 'QCM' || q.type === 'VF' || q.type === 'QCM_MULTI'){
+      const multi = q.type === 'QCM_MULTI', perm = EV.perms[q.id];
+      h += perm.map((oi, pos) => {
+        const on = multi ? (v || []).indexOf(evLetter(oi)) >= 0 : v === evLetter(oi);
+        return '<label class="ev-opt' + (on ? ' sel' : '') + '"><input type="' + (multi ? 'checkbox' : 'radio') + '" name="evo" value="' + evLetter(oi) + '"' + (on ? ' checked' : '') + '><span>' + (q.type === 'VF' ? '' : evLetter(pos) + '. ') + escapeHTML(q.c[oi]) + '</span></label>';
+      }).join('');
+    } else if(q.type === 'TROUS'){
+      h += '<input id="ev-input" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + escapeHTML(v || '') + '" placeholder="Ta réponse">';
+    } else if(q.type === 'ASSO'){
+      const pm = EV.perms[q.id], cur = v || {};
+      h += '<ol class="ev-defs" type="1">' + pm.d.map(di => '<li>' + escapeHTML(q.defs[di]) + '</li>').join('') + '</ol><div class="ev-asso">';
+      h += pm.n.map(ni => '<label for="eva' + ni + '">' + escapeHTML(q.c[ni]) + '</label><select id="eva' + ni + '" data-n="' + ni + '"><option value="">— choisir —</option>' +
+        pm.d.map((di, pos) => '<option value="' + di + '"' + (String(cur[ni]) === String(di) ? ' selected' : '') + '>Définition ' + (pos + 1) + '</option>').join('') + '</select>').join('');
+      h += '</div>';
+    }
+    $('ev-body').innerHTML = h;
+    const body = $('ev-body');
+    if(q.type === 'QCM' || q.type === 'VF'){
+      body.querySelectorAll('input[name=evo]').forEach(i => i.onchange = () => { EV.ans[q.id] = i.value; evSave(); evRender(); });
+    } else if(q.type === 'QCM_MULTI'){
+      body.querySelectorAll('input[name=evo]').forEach(i => i.onchange = () => {
+        const set = new Set(EV.ans[q.id] || []); if(i.checked) set.add(i.value); else set.delete(i.value);
+        EV.ans[q.id] = Array.from(set).sort(); evSave(); evRender();
+      });
+    } else if(q.type === 'TROUS'){
+      $('ev-input').oninput = (e) => { EV.ans[q.id] = e.target.value; evSave(); const d = $('ev-dots').children[idx]; if(d) d.classList.toggle('ans', e.target.value.trim() !== ''); };
+    } else if(q.type === 'ASSO'){
+      body.querySelectorAll('select').forEach(sel => sel.onchange = () => {
+        const cur = Object.assign({}, EV.ans[q.id] || {}); if(sel.value === '') delete cur[sel.dataset.n]; else cur[sel.dataset.n] = +sel.value;
+        EV.ans[q.id] = cur; evSave(); const d = $('ev-dots').children[idx]; if(d) d.classList.toggle('ans', Object.keys(cur).length > 0);
+      });
+    }
+    $('ev-prev').disabled = idx === 0; $('ev-next').disabled = idx === n - 1;
+  }
+  const evNorm = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/%/g, '').replace(/\s+/g, '').replace(',', '.');
+  function evCorrect(q, v){
+    if(v === undefined || v === null) return false;
+    if(q.type === 'QCM' || q.type === 'VF') return v === String(q.a).trim().toUpperCase();
+    if(q.type === 'QCM_MULTI'){ const want = String(q.a).split(',').map(x => x.trim().toUpperCase()).sort().join(','); return (v || []).slice().sort().join(',') === want; }
+    if(q.type === 'TROUS'){ const num = (t) => { const x = evNorm(t); return /^-?\d+(\.\d+)?$/.test(x) ? parseFloat(x) : null; }; return String(q.a).split('/').some(x => { const a = num(x), b = num(v); return (a !== null && b !== null) ? a === b : evNorm(x) === evNorm(v); }); }
+    if(q.type === 'ASSO') return q.c.every((_, i) => String(v[i]) === String(i));
+    return false;
+  }
+  function evRepString(q, v){
+    if(v === undefined || v === null) return '';
+    if(q.type === 'QCM_MULTI') return (v || []).join('+');
+    if(q.type === 'ASSO') return q.c.map((_, i) => evLetter(i) + '-' + (v[i] === undefined ? '?' : (+v[i] + 1))).join('|');
+    return String(v);
+  }
+  function evFinish(reason){
+    if(!EV || EV.done) return;
+    if(evTick){ clearInterval(evTick); evTick = null; }
+    const qs = EV.P.questions, fin = isoLocal(nowD()), elapsed = Math.min(Math.round((Date.now() - EV.start) / 1000), Math.round((EV.end - EV.start) / 1000));
+    const rows = sget('rows', []);
+    qs.forEach(q => {
+      const v = EV.ans[q.id], ok = evCorrect(q, v);
+      const o = {schema:2, eleve:EV.eleve, equipe:EV.equipe, session_id:EV.sid, session_debut:EV.debut, session_fin:fin, horodatage:fin, jour:fin.slice(0, 10),
+        question_id:q.id, format:q.type, correct:ok ? 1 : 0, tentative:1, duree_s:elapsed, mode:(EV.test ? 'TEST-eval' : 'eval'), phase:EV.phase,
+        version_app:APP_VERSION, version_banque:BANK_VERSION, bareme_version:CFG.bareme_version || '', config_date:CFG.mis_a_jour_le || '', config_perimee:EV.stale ? 1 : 0,
+        contexte_seance:'en_classe', participation_ludique:0, points_jeu:0};
+      rows.push(COLS.map(c => o[c]).concat([q.k, evRepString(q, v), EV.id, reason]));
+    });
+    sset('rows', rows);
+    EV.done = true; EV.P = null; EV.fin = reason; evSave();
+    $('ev-send-note').textContent = 'Fichier : ' + fileName() + (CFG.contact_resultats ? ' · À envoyer à : ' + CFG.contact_resultats : '');
+    show('screen-eval-end');
+    EV = null;
+  }
+  function evBind(){
+    $('btn-ev-start').onclick = evStart;
+    $('input-eval-code').onkeydown = (e) => { if(e.key === 'Enter') evStart(); };
+    $('btn-ev-resume').onclick = () => { const p = evPending(); if(p){ EV = p; if(Date.now() >= EV.end){ evFinish('temps'); } else evOpen(); } };
+    $('ev-prev').onclick = () => { if(EV && EV.cur > 0){ EV.cur--; evSave(); evRender(); } };
+    $('ev-next').onclick = () => { if(EV && EV.cur < EV.P.questions.length - 1){ EV.cur++; evSave(); evRender(); } };
+    $('ev-finish').onclick = () => {
+      if(!EV) return;
+      const miss = EV.P.questions.filter(q => !evAnswered(q)).length;
+      if(confirm(miss ? 'Il reste ' + miss + ' question(s) sans réponse. Terminer quand même ?' : "Terminer l'évaluation ?")) evFinish('bouton');
+    };
+    $('ev-send').onclick = sendResults;
+    $('ev-home').onclick = () => goStart();
+  }
+  function evCheckPending(){
+    const p = evPending();
+    if(p && Date.now() >= p.end){ EV = p; evFinish('temps'); return true; }
+    return false;
+  }
+
   /* ---------- initialisation ---------- */
   function init(){
+    evBind();
     $('btn-change-id').onclick = openIdentity;
     $('btn-identity-ok').onclick = saveIdentity;
     $('btn-rank').onclick = openRank;

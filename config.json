@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "phase": "base",
-  "version_application": "2.1",
+  "version_application": "2.2",
   "version_banque": "494q-v2",
   "bareme_version": "B1",
   "mis_a_jour_le": "2026-11-20",
@@ -129,5 +129,6 @@
       "hash": "ecc6a78d1d35afbe"
     }
   ],
-  "challenge_fin": "2027-12-31"
+  "challenge_fin": "2027-12-31",
+  "evaluations": []
 }
